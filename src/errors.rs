@@ -33,6 +33,26 @@ pub enum ConfigError {
     #[error("YAML configuration error: {0}")]
     Yaml(#[from] noyalib::Error),
 
+    /// TOML parsing or deserialization failure from toml_edit.
+    #[error("TOML configuration deserialization error: {0}")]
+    TomlDe(#[from] toml_edit::de::Error),
+
+    /// TOML serialization failure from toml_edit.
+    #[error("TOML configuration serialization error: {0}")]
+    TomlSer(#[from] toml_edit::ser::Error),
+
+    /// TOML document parsing error from toml_edit.
+    #[error("TOML document parsing error: {0}")]
+    Toml(#[from] toml_edit::TomlError),
+
+    /// SemVer error
+    #[error("SemVer error: {0}")]
+    SemVer(#[from] semver::Error),
+
+    /// 'self_update' error
+    #[error("self_update error: {0}")]
+    SelfUpdate(#[from] self_update::errors::Error),
+
     /// YAML rrduconfig version incompatible error
     #[error(
         "Incompatible configuration version: found '{found}', required at least '{required}' or newer. See MIGRATION.md."
@@ -47,6 +67,14 @@ pub enum ConfigError {
     /// YAML rrduconfig version missing error
     #[error("Legacy configuration detected without version field. See MIGRATION.md.")]
     LegacyConfiguration,
+
+    /// Rust-std lib error
+    #[error("Std error: {0}")]
+    StdErr(#[from] Box<dyn std::error::Error>),
+
+    /// Ureq error
+    #[error("UREQ error: {0}")]
+    Ureq(#[from] ureq::Error),
 }
 
 /// Errors that can occur when reading the 'Cargo.toml' files
@@ -101,3 +129,6 @@ pub enum CollectionVersionError {
     #[error("Error while try to get version from 'crates.io': {0}")]
     Other(String),
 }
+
+/// Result type with attached `ConfigError` as `Err(..)`
+pub type RrduConfigResult<T> = Result<T, ConfigError>;

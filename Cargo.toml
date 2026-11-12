@@ -1,6 +1,6 @@
 [package]
 name = "rust-recursive-deps-updater"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.98.1"
 authors = ["Dominic Seel"]
@@ -27,18 +27,19 @@ colored = "3.1.1"
 comfy-table = { package = "comfy-table-inline", version = "8.0.2" }
 dialoguer = { version = "0.12.0", features = ["history", "completion"] }
 indicatif = "0.18.6"
-log = "0.4.34"
-noyalib = "0.0.57"
+log = "0.4.35"
+noyalib = "0.0.60"
+self_update = "1.3.3"
 semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 simple_logger = { version = "5.2.0", features = ["timestamps", "colors"] }
-sysinfo = "0.39.6"
+sysinfo = { version = "0.40.3", default-features = false, features = ["system"] }
 thiserror = "2.0.21"
 time = { version = "0.3.55", features = ["macros"] }
-tokio = { version = "1.53.3", features = ["full"] }
-toml_edit = "0.25.17"
-ureq = { version = "3.4.2", features = ["rustls", "json"] }
+tokio = { version = "1.54.1", features = ["full"] }
+toml_edit = { version = "0.25.19", features = ["serde"] }
+ureq = { version = "3.5.2", features = ["rustls", "json"] }
 usize-conv = { version = "0.1.1", features = ["from_usize"] }
 
 [dev-dependencies]
@@ -52,6 +53,18 @@ criterion = "0.8.2"
 version = "0.23.46"
 default-features = false
 features = ["ring", "std", "tls12", "logging"]
+
+# Override the rustls-webpki version from rustls/reqwest.
+# rustls-webpki in the version rustls includes has RUSTSEC-2026-0382.
+# TODO: Remove after rustls updated dependency internal.
+[dependencies.rustls-webpki]
+version = "0.103.16"
+
+# Override the rustix version from crossterm/tempfile.
+# rustix in the version crossterm includes has RUSTSEC-2026-0486.
+# TODO: Remove after crossterm and tempfile updated dependency internal.
+[dependencies.rustix]
+version = "1.1.6"
 
 [[bench]]
 name = "rrdu_benchmarks"

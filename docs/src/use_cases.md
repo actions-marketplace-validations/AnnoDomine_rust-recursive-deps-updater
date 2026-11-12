@@ -193,3 +193,50 @@ rrdu --report
 
 Output includes OS architecture, system CPU/memory details, Rust edition, `rrdu` version, and discovered workspaces, while automatically masking user home directories and sensitive tokens.
 
+---
+
+## 6. Configuration Migration (`--migrate`)
+
+When upgrading repositories that previously used the legacy `.rrduconfig` (YAML) format, `rrdu` provides an automated single-level migration tool:
+
+```sh
+rrdu --migrate
+```
+
+- Converts the `.rrduconfig` file located at the current directory level into modern `rrdu.toml`.
+- **Irrevocable Deletion:** The legacy `.rrduconfig` file is permanently deleted after the new `rrdu.toml` is written. It is strongly recommended to create your own manual backup before running `--migrate`.
+- Legacy `.rrduconfig` files continue to work transparently in-memory, but migrating to `rrdu.toml` ensures future compatibility as `.rrduconfig` is deprecated.
+
+---
+
+## 7. In-Place Binary Self-Update (`--self-update`)
+
+Keep `rrdu` current with official releases directly from the CLI:
+
+```sh
+rrdu --self-update
+```
+
+- **Interactive Notification:** In interactive mode, if a newer version of `rrdu` is found, a summary table displays available release details before proceeding.
+- **Dedicated Update Interface:** Running `rrdu --self-update` opens a focused interactive screen allowing:
+  - `g`: In-place binary self-update via GitHub Releases (downloads and replaces binary in user space).
+  - `c`: Update via `cargo install rust-recursive-deps-updater` from crates.io.
+  - `q` / `Esc`: Abort and cleanly exit.
+- **User-Space & Secure:** Operates strictly within user-space privileges without requiring root.
+- **Persistent Caching:** Uses disk caching (`~/.rrdu/cache/rrdu_self_update_cache.bin`) with a 24-hour expiration check to prevent unnecessary API queries.
+
+---
+
+## 8. Upcoming: Desktop Graphical UI Mode (`--ui`) in v0.2.0
+
+As part of the upcoming **Version 0.2.0** milestone, `rrdu` will deliver an optional Desktop GUI built with **Dioxus**:
+
+```sh
+# Future command in v0.2.0
+rrdu --ui
+```
+
+- **Interactive Workspace Tree:** Visual dependency tree inspection with interactive add/delete dependency actions powered by the refactored native `cargo` crate integration.
+- **Enhanced UX/UI & Accessibility:** Screen reader compatibility, native OS window integration, dynamic font scaling, and high-contrast color palettes for maximum visual accessibility.
+- **Interactive Update Validation:** Graphical multi-select workflows with explicit confirmation dialogs before applying manifest updates to disk.
+

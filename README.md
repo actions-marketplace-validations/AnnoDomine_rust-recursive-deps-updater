@@ -97,13 +97,24 @@ rrdu
 
 ### 2. Configuration Initialization
 
-Generate a tailored, documented `.rrduconfig` file by scanning the workspace:
+Generate a tailored, documented `rrdu.toml` file by scanning the workspace:
 
 ```sh
 rrdu --init
 ```
 
-### 3. Headless CI / Audit Mode
+### 3. Configuration Migration (`--migrate`)
+
+Migrate an existing `.rrduconfig` (YAML) located at the current folder level to the modern `rrdu.toml` format:
+
+```sh
+rrdu --migrate
+```
+
+> [!CAUTION]
+> The legacy `.rrduconfig` file is irrevocably deleted once `rrdu.toml` is written. We recommend creating your own backup prior to running `--migrate`.
+
+### 4. Headless CI / Audit Mode
 
 Automate dependency health checks in your CI pipelines:
 
@@ -114,15 +125,21 @@ rrdu --headless
 
 > **Note:** Scans and cached API queries are performed automatically upon launch. To protect your codebase from unintended automated modifications, dependency updates are never applied unattended; all updates must be validated and confirmed by the user in interactive mode (`rrdu`).
 
-### 4. Self-Update
+### 5. Self-Update
 
-Check for newer releases on GitHub and update the installed binary in-place:
+Check for newer releases on GitHub Releases or crates.io and update the installed binary in-place:
 
 ```sh
 rrdu --self-update
 ```
 
-### 5. Diagnostics & Bug Report
+- **Interactive Update Notification:** When launching `rrdu` in interactive mode and an update is detected, an informative summary table is displayed with release notes before continuing.
+- **Dedicated Self-Update Menu (`--self-update`):** Displays a focused terminal interface offering:
+  - `g`: Update in-place via GitHub Releases (downloads pre-compiled release binary and replaces executable atomically).
+  - `c`: Update via Cargo from crates.io (`cargo install rust-recursive-deps-updater`).
+  - `q` or `Esc`: Abort update and exit cleanly.
+
+### 6. Diagnostics & Bug Report
 
 Generate an anonymized diagnostic report to paste into GitHub issues (paths are strictly sanitized to protect privacy):
 
@@ -130,7 +147,7 @@ Generate an anonymized diagnostic report to paste into GitHub issues (paths are 
 rrdu --report
 ```
 
-### 6. Trace File Logging
+### 7. Trace File Logging
 
 Enable background trace logging to `./audit/rrdu.log` with automatic 1 MB splitting and timestamped archives:
 
@@ -138,7 +155,7 @@ Enable background trace logging to `./audit/rrdu.log` with automatic 1 MB splitt
 rrdu --trace
 ```
 
-### 7. Command Help
+### 8. Command Help
 
 Display a formatted reference of all available commands, options, and descriptions:
 
@@ -148,44 +165,44 @@ rrdu --help
 
 ---
 
-## Configuration (`.rrduconfig`)
+## Configuration (`rrdu.toml`)
 
-You can place an optional `.rrduconfig` file in your repository root to configure workspace members, exclusions, and automated update behaviors:
+> [!NOTE]
+> `rrdu.toml` is the active standard configuration format. The legacy `.rrduconfig` (YAML) format is **deprecated** and will be removed in a future release. Existing `.rrduconfig` files continue to be supported in-memory for backwards compatibility, or can be migrated via `rrdu --migrate`. See [MIGRATION.md](./MIGRATION.md).
 
-```yaml
-workspace:
-  - project: Root
-    path: ./
-    exclude:
-      project: # Excludes all named dependencies project wide
-        - tokio
-      section: # Excludes all named dependencies from specific sections
-        dev-dependencies: # Only exclude named dependencies from [dev-dependencies] section
-          - serde
-        dependencies.clap: [] # Exclude [dependencies.clap] section in total.
-  - project: WorkspaceCrate
-    path: crates/workspace_crate
-    sub-config: true
+You can place an optional `rrdu.toml` file in your repository root to configure workspace members, exclusions, and runner settings:
 
-updater:
-  exclude:
-    - excluded_project
-  max-lines: 10 # Maximum entries per page during interactive pagination
-  version: 0.0.5 # Version where the config file was created
+```toml
+# Schema for editor autocompletion and validation (Taplo / Even Better TOML)
+#:schema https://annodomine.github.io/rust-recursive-deps-updater/schemas/rrdu.schema.json
+
+# List single 'Cargo.toml' workspaces
+[workspaces]
+rust-recursive-deps-updater = { label = "rrdu", path = "./", exclude = { project = ["comfy-table-inline", "rustls"] } }
+
+# List single 'rrdu.toml' or legacy ".rrduconfig" sub-workspaces
+[configs]
+# sub-crate = "crates/sub"
+
+# 'rrdu' workspace configuration
+[rrdu]
+max-lines = 10
+version = "0.1.0"
+exclude = ["target", "vendor"]
 ```
 
 ### Configuration Options
 
-| Setting                     | Type      | Description                                                                             |
-| --------------------------- | --------- | --------------------------------------------------------------------------------------- |
-| `workspace.project`         | `string`  | Human-readable name of the project                                                      |
-| `workspace.path`            | `path`    | Path to the directory containing `Cargo.toml` (e.g. `./`, `./crates/foo`, `crates/bar`) |
-| `workspace.exclude.project` | `list`    | Crate names excluded from updates across the entire project _(optional)_                |
-| `workspace.exclude.section` | `mapping` | Section-specific exclusions (e.g. `dev-dependencies`, table sections) _(optional)_      |
-| `workspace.sub-config`      | `bool`    | Set to `true` if the sub-project provides its own `.rrduconfig` _(default: false)_      |
-| `updater.exclude`           | `list`    | Folders to completely skip during recursive scans _(optional)_                          |
-| `updater.max-lines`         | `int`     | Maximum items displayed per page in interactive mode _(default: 10)_                    |
-| `updater.version`           | `string`  | Version of rrdu the config was created with, used for compatibility checks              |
+| Setting | Type | Description |
+| :--- | :--- | :--- |
+| `workspaces.<key>.path` | `path` | Path to the directory containing `Cargo.toml` or directly to `Cargo.toml` *(required)* |
+| `workspaces.<key>.label` | `string` | Optional human-readable display label (defaults to project key) |
+| `workspaces.<key>.exclude.project` | `list` | Crate names excluded from updates across the entire project *(optional)* |
+| `workspaces.<key>.exclude.section` | `mapping` | Section-specific exclusions (e.g. `dev-dependencies`, table sections) *(optional)* |
+| `configs.<label>` | `path` | Path to a sub-project directory or configuration file providing its own `rrdu.toml` *(optional)* |
+| `rrdu.max-lines` | `int` | Maximum items displayed per page in interactive mode *(default: 10)* |
+| `rrdu.version` | `string` | Version of rrdu the config was created with, used for compatibility checks |
+| `rrdu.exclude` | `list` | Folders to completely skip during recursive scans *(optional)* |
 
 ---
 
@@ -194,10 +211,20 @@ updater:
 Our definitions following a specified naming convention to remove confusion.
 
 - **`scan`**: A `scan` names the flow to collect and scan dependencies for update check.
-- **`discovery`**: `discoveries` are crawling to the workspace folder and the sub folders to identify `Cargo.toml` and `.rrduconfig` files.
+- **`discovery`**: `discoveries` are crawling to the workspace folder and the sub folders to identify `Cargo.toml` and configuration files (`rrdu.toml` or legacy `.rrduconfig`).
 - **`update`**: The `update` process is the flow to update the `Cargo.toml` dependencies.
-- **`workspace`**: A workspace is the identification list of projects based on the related `.rrduconfig`. It is identified by the placement of the `.rrduconfig`.
-- **`project`**: `projects` are single identified `Cargo.toml` and `.rrduconfig` files.
+- **`workspace`**: A workspace is the identification list of projects based on the related configuration file.
+- **`project`**: `projects` are single identified `Cargo.toml` files and configuration entries.
+
+---
+
+## Upcoming Major Milestone: Version 0.2.0
+
+We have major architectural evolutions and new capabilities planned for the upcoming release **v0.2.0**:
+
+- **Core Cargo Crate Refactoring:** Embedding the official `cargo` binary/crate as a direct library dependency. Refactoring core workspace traversal and dependency graph modeling onto the `cargo` crate delivers significant performance gains, true workspace-native resolution, and optimal memory efficiency.
+- **Interactive Workspace Dependency Management:** Building directly on native `cargo` crate integration, `rrdu` will introduce dynamic dependency addition and deletion (`Add/delete deps in workspace in interactive mode`) within the interactive interface.
+- **Desktop GUI via Dioxus (`--ui`):** An optional modern Desktop Graphical User Interface built with Dioxus on top of the interactive core, delivering rich workspace visualization, enhanced UX/UI, and full digital accessibility (screen reader compatibility, dynamic font scaling, and high-contrast theming).
 
 ---
 

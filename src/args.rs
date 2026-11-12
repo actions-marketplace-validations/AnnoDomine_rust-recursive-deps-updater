@@ -16,4 +16,10 @@ pub struct Args {
     /// Enable trace file
     #[arg(long, default_value_t = false)]
     pub trace: bool,
+    /// Migrate legacy .rrduconfig to rrdu.toml from the executed folder level
+    #[arg(long, default_value_t = false)]
+    pub migrate: bool,
+    /// Update rrdu binary in-place to latest release
+    #[arg(long, default_value_t = false)]
+    pub self_update: bool,
 }

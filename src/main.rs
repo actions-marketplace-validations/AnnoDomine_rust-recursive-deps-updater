@@ -14,9 +14,10 @@ use std::{io::IsTerminal, process};
 use rrdu::{
     args::Args,
     cli::{headless::Headless, interactive::Interactive},
-    config::rrdu_config::RrduConfig,
+    config::{migrate::MigrateYamlToTomlConfig, rrdu_toml::RrduTomlConfig},
     logger::status_codes::Module,
     report::report::Report,
+    self_updater::controller::SelfUpdateController,
     simple_status,
     workspace::project::Workspace,
 };
@@ -56,6 +57,12 @@ async fn main() {
         "Start rust-recursive-deps-updater"
     );
 
+    // Migration mode
+    if args.migrate {
+        MigrateYamlToTomlConfig::save_to_new_toml();
+        process::exit(0);
+    }
+
     // Report mode
     if args.report {
         Report::collect().await;
@@ -64,7 +71,7 @@ async fn main() {
 
     // Init mode
     if args.init {
-        RrduConfig::create_config();
+        RrduTomlConfig::create_config();
         process::exit(0);
     }
 
@@ -78,6 +85,21 @@ async fn main() {
         Headless::new(workspace).headless_workspace_table(args.headless);
         process::exit(0);
     }
+
+    // Self-Update init
+    let self_updater = tokio::task::spawn_blocking(SelfUpdateController::new)
+        .await
+        .unwrap_or_default();
+
+    // Self-Update mode
+    if args.self_update {
+        let _ = self_updater.render_self_update().await;
+
+        // Even if it is not neccessary, we process::exit here.
+        process::exit(0);
+    }
+
+    self_updater.render_interactive();
 
     // Interactive mode
     let mut interactive = Interactive::new(&workspace);
